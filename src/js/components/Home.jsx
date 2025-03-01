@@ -11,54 +11,70 @@ const Home = () => {
   useEffect(() => {
     fetch(API_URL)
       .then((res) => res.json())
-      .then((data) => setTodos(data))
-      .catch((err) => console.error("Error cargando tareas:", err));
+      .then((data) => {
+        console.log("Datos recibidos:", data); // 📌 Verifica la estructura de la respuesta en la consola
+        if (Array.isArray(data)) {
+          setTodos(data);
+        } else {
+          console.error("La API no devolvió un array:", data);
+          setTodos([]); // Evitar el error asegurando que sea un array
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando tareas:", err);
+        setTodos([]); // Evitar errores en caso de fallo en la carga
+      });
   }, []);
 
   // 🔹 Agregar nueva tarea al backend
   const addTodo = () => {
     if (inputValue.trim() === "") return;
 
-    const newTodo = { text: inputValue };
+    const newTodo = { label: inputValue, done: false }; // La API espera "label", no "text"
 
     fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(newTodo),
+      method: "PUT", // La API requiere "PUT" en lugar de "POST"
+      body: JSON.stringify([...todos, newTodo]),
       headers: { "Content-Type": "application/json" },
     })
       .then((res) => res.json())
-      .then((data) => {
-        setTodos([...todos, data]); // Agregar tarea nueva a la lista
+      .then(() => {
+        setTodos([...todos, newTodo]); // Agregar tarea nueva a la lista
         setInputValue(""); // Limpiar input
       })
       .catch((err) => console.error("Error agregando tarea:", err));
   };
 
   // 🔹 Eliminar tarea del backend
-  const handleDelete = (id) => {
-    fetch(`${API_URL}/${id}`, { method: "DELETE" })
-      .then(() => {
-        setTodos(todos.filter((todo) => todo.id !== id)); // Quitar la tarea eliminada
-      })
+  const handleDelete = (index) => {
+    const updatedTodos = todos.filter((_, i) => i !== index);
+
+    fetch(API_URL, {
+      method: "PUT",
+      body: JSON.stringify(updatedTodos),
+      headers: { "Content-Type": "application/json" },
+    })
+      .then(() => setTodos(updatedTodos))
       .catch((err) => console.error("Error eliminando tarea:", err));
   };
 
   return (
     <div>
       <h1>Todo List</h1>
+      <input
+        type="text"
+        placeholder="Nueva tarea..."
+        onChange={(e) => setInputValue(e.target.value)}
+        value={inputValue}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") addTodo();
+        }}
+      />
       <ul>
-        <input
-          type="text"
-          onChange={(e) => setInputValue(e.target.value)}
-          value={inputValue}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") addTodo();
-          }}
-        />
-        {todos.map((todo) => (
-          <li key={todo.id}>
-            {todo.text}{" "}
-            <button onClick={() => handleDelete(todo.id)} style={{ marginLeft: "10px" }}>
+        {todos.map((item, index) => (
+          <li key={index}>
+            {item.label}
+            <button onClick={() => handleDelete(index)} style={{ marginLeft: "10px" }}>
               ❌
             </button>
           </li>
