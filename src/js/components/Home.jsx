@@ -1,87 +1,125 @@
-import React, { useState, useEffect } from "react";
-
-const USERNAME = "franco"; // Reemplázalo con tu nombre de usuario único
-const API_URL = `https://playground.4geeks.com/todo/todos/${USERNAME}`;
+import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from 'uuid';
 
 const Home = () => {
   const [inputValue, setInputValue] = useState("");
   const [todos, setTodos] = useState([]);
 
-  // 🔹 Cargar tareas al iniciar
   useEffect(() => {
-    fetch(API_URL)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Datos recibidos:", data); // 📌 Verifica la estructura de la respuesta en la consola
-        if (Array.isArray(data)) {
-          setTodos(data);
-        } else {
-          console.error("La API no devolvió un array:", data);
-          setTodos([]); // Evitar el error asegurando que sea un array
-        }
-      })
-      .catch((err) => {
-        console.error("Error cargando tareas:", err);
-        setTodos([]); // Evitar errores en caso de fallo en la carga
-      });
+    createUser();
+    takeList();
   }, []);
 
-  // 🔹 Agregar nueva tarea al backend
-  const addTodo = () => {
-    if (inputValue.trim() === "") return;
+  useEffect(() => {
+    sendList();
+  }, [todos]);
 
-    const newTodo = { label: inputValue, done: false }; // La API espera "label", no "text"
-
-    fetch(API_URL, {
-      method: "PUT", // La API requiere "PUT" en lugar de "POST"
-      body: JSON.stringify([...todos, newTodo]),
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setTodos([...todos, newTodo]); // Agregar tarea nueva a la lista
-        setInputValue(""); // Limpiar input
-      })
-      .catch((err) => console.error("Error agregando tarea:", err));
+  const createUser = async () => {
+    try {
+      const response = await fetch('https://playground.4geeks.com/todo/users/franco', {
+        method: "POST",
+        body: JSON.stringify([]),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      
+      const transform = await response.json();
+      console.log(transform.msg);
+    } catch (e) {
+      console.log("error", e);
+    }
   };
 
-  // 🔹 Eliminar tarea del backend
-  const handleDelete = (index) => {
-    const updatedTodos = todos.filter((_, i) => i !== index);
+  const takeList = async () => {
+    try {
+      const previewResponse = await fetch('https://playground.4geeks.com/todo/users/franco');
+      if (!previewResponse.ok) {
+        throw Error(previewResponse.statusText);
+      }
+      const transform = await previewResponse.json();
+      console.log("Datos recibidos:", transform);
+      setTodos(Array.isArray(transform) ? transform : []);
+    } catch (e) {
+      console.log("error", e);
+      setTodos([]); // Evita el error asignando un array vacío en caso de fallo
+    }
+  };
+    
+  const sendList = async () => {
+    try {
+      const response = await fetch('https://playground.4geeks.com/todo/todos/franco', {
+        method: "PUT",
+        body: JSON.stringify(todos),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      
+      const transform = await response.json();
+      console.log(transform.msg);
+    } catch (e) {
+      console.log("error", e);
+    }
+  };
 
-    fetch(API_URL, {
-      method: "PUT",
-      body: JSON.stringify(updatedTodos),
-      headers: { "Content-Type": "application/json" },
-    })
-      .then(() => setTodos(updatedTodos))
-      .catch((err) => console.error("Error eliminando tarea:", err));
+  const pressEnter = async (e) => {
+    if (e.key === "Enter" && inputValue !== "") {
+      let obj = {
+        id: uuidv4(),
+        label: inputValue,
+        done: false
+      };
+      setTodos([...todos, obj]);
+      setInputValue("");
+    }
+  };
+
+  const confirmDelete = (id) => {
+    const updatedTodos = todos.filter((item) => item.id !== id);
+    setTodos(updatedTodos);
   };
 
   return (
-    <div>
-      <h1>Todo List</h1>
-      <input
-        type="text"
-        placeholder="Nueva tarea..."
-        onChange={(e) => setInputValue(e.target.value)}
-        value={inputValue}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") addTodo();
-        }}
-      />
-      <ul>
-        {todos.map((item, index) => (
-          <li key={index}>
-            {item.label}
-            <button onClick={() => handleDelete(index)} style={{ marginLeft: "10px" }}>
-              ❌
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div className="cont">
+      <h1 className="title">Todos</h1>
+      <div className="bac-list">
+        <ul className="list-group list-group-flush">
+          <input
+            className="custom-input"
+            type="text"
+            onChange={(e) => setInputValue(e.target.value)}
+            value={inputValue}
+            onKeyDown={(e) => pressEnter(e)}
+            placeholder="+ New task"
+          />
+          {todos.map((item) => (
+            <div className="li-cont" key={item.id}>
+              <li className="list-group-item li-c">
+                {item.label}
+                <button
+                  className="confirm-bu"
+                  onClick={() => confirmDelete(item.id)}
+                >
+                  <i className="fa-solid fa-check fa-beat fa-xl" style={{ color: "#07f702" }}></i>
+                </button>
+              </li>
+            </div>
+          ))}
+        </ul>
+      </div>
+      <p className="items">Do you have {todos.length} pending tasks</p>
     </div>
   );
 };
 
 export default Home;
+
