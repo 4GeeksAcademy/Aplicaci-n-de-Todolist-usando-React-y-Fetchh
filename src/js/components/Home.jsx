@@ -1,125 +1,54 @@
-import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState } from 'react';
 
 const Home = () => {
-  const [inputValue, setInputValue] = useState("");
-  const [todos, setTodos] = useState([]);
 
-  useEffect(() => {
-    createUser();
-    takeList();
-  }, []);
+    const [nuevoTodo, setNuevoTodo] = useState("tarea nueva");
+    const [todos, setTodos] = useState(["Una Tarea de prueba", "Dos tareas de prueba", "tres tareaa de prueba"])
 
-  useEffect(() => {
-    sendList();
-  }, [todos]);
+    const handleclick = () => {
+        console.log("Nueva Tarea", nuevoTodo)
+        setTodos([...todos, nuevoTodo])
 
-  const createUser = async () => {
-    try {
-      const response = await fetch('https://playground.4geeks.com/todo/users/franco', {
-        method: "POST",
-        body: JSON.stringify([]),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      
-      const transform = await response.json();
-      console.log(transform.msg);
-    } catch (e) {
-      console.log("error", e);
+
     }
-  };
 
-  const takeList = async () => {
-    try {
-      const previewResponse = await fetch('https://playground.4geeks.com/todo/users/franco');
-      if (!previewResponse.ok) {
-        throw Error(previewResponse.statusText);
-      }
-      const transform = await previewResponse.json();
-      console.log("Datos recibidos:", transform);
-      setTodos(Array.isArray(transform) ? transform : []);
-    } catch (e) {
-      console.log("error", e);
-      setTodos([]); // Evita el error asignando un array vacío en caso de fallo
+
+    const deletetask = (indice) => {
+        console.log(indice);
+        const listaNueva = todos.filter((todo, i) => i !== indice)
+        setTodos(listaNueva);
     }
-  };
-    
-  const sendList = async () => {
-    try {
-      const response = await fetch('https://playground.4geeks.com/todo/todos/franco', {
-        method: "PUT",
-        body: JSON.stringify(todos),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      
-      const transform = await response.json();
-      console.log(transform.msg);
-    } catch (e) {
-      console.log("error", e);
+
+    const handlechange = (event) => {
+        setNuevoTodo(event.target.value);
     }
-  };
-
-  const pressEnter = async (e) => {
-    if (e.key === "Enter" && inputValue !== "") {
-      let obj = {
-        id: uuidv4(),
-        label: inputValue,
-        done: false
-      };
-      setTodos([...todos, obj]);
-      setInputValue("");
-    }
-  };
-
-  const confirmDelete = (id) => {
-    const updatedTodos = todos.filter((item) => item.id !== id);
-    setTodos(updatedTodos);
-  };
-
-  return (
-    <div className="cont">
-      <h1 className="title">Todos</h1>
-      <div className="bac-list">
-        <ul className="list-group list-group-flush">
-          <input
-            className="custom-input"
-            type="text"
-            onChange={(e) => setInputValue(e.target.value)}
-            value={inputValue}
-            onKeyDown={(e) => pressEnter(e)}
-            placeholder="+ New task"
-          />
-          {todos.map((item) => (
-            <div className="li-cont" key={item.id}>
-              <li className="list-group-item li-c">
-                {item.label}
-                <button
-                  className="confirm-bu"
-                  onClick={() => confirmDelete(item.id)}
-                >
-                  <i className="fa-solid fa-check fa-beat fa-xl" style={{ color: "#07f702" }}></i>
-                </button>
-              </li>
+    return (
+        <div className="text-center">
+            <h1 className="text-center mt-5">
+                Todo list usando React y Fetch
+            </h1>
+            <div className="container">
+                <div className="d-flex gap-2">
+                    <input type="text" className="form-control" onChange={handlechange} />
+                    <button onClick={handleclick} className="btn btn-primary">
+                        agregar tarea
+                    </button>
+                </div>
             </div>
-          ))}
-        </ul>
-      </div>
-      <p className="items">Do you have {todos.length} pending tasks</p>
-    </div>
-  );
+            <p>Nueva Tarea:{nuevoTodo}</p>
+            <ul className="list-group">
+                {todos.map((todo, indice) => {
+                    return (
+                        <li className="list-group-item d-flex justify-content-between align-item-center">
+                            {todo} <button className="btn btn-danger" onClick={() => deletetask(indice)}>Borrar</button>
+
+                        </li>
+                    )
+                })}
+            </ul>
+        </div >
+
+    );
 };
 
 export default Home;
-
