@@ -10,7 +10,8 @@ import '../styles/index.css'
 
 // components
 import Home from './components/Home';
-import Test from './components/Test';
+import Tareasfetch from './components/Tareasfetch';
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
